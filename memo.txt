@@ -1,0 +1,55 @@
+https://github.com/hakatashi/esolang-battle/blob/master/lib/validation.js
+
+
+Beatnik .. スタック型。チュリ完ではない。
+整数は多倍長なのだが入出力が文字コードのみで、しかも割り算が無くて引き算とifしかないのでつらそう。
+
+Beeswax .. はにかむー
+a — b — c — d
+ \ / \ / \ / \
+  e — f — g — h
+   \ / \ / \ / \
+    i — j — k — l
+    
+Brain-Flak .. (){}[]<> で書かれる関数型謎言語。むずそう。
+
+Brainbool .. 長さを10倍にすることによってBFから変換できるらしい。
+
+Brian & Chuck .. テープが2本あってお互いを書き換えるやつ。やばい。
+
+Bubblegum .. SHA256ハッシュを合わせないといけないので絶望。
+
+
+Charcoal .. Wikiを見ただけ。Canavs?
+
+Forth .. ideone. よさそう。
+
+grime .. 正方形パターンマッチ言語？
+
+
+Minkolang .. よさそうなのだが入力がArgumentsからなのでだめ。
+
+OZ .. ideoneのサンプルのHello Worldが動かない
+
+Pylons .. 入力がargvからのみ。
+
+Shtriped .. 入力時にInputほげほげと出るのでつらそう
+
+S.I.L.O.S .. よさそうなのだが入力がArgumentsからなのでだめ。
+
+SQL .. ideoneで入力どないすねん問題(.importはvalidな表形式でないとつらい)
+.import /dev/stdin inputtmp　とかでやられる。
+
+Thue .. 置換文法だが出力時に改行が入るのでだめ
+
+
+Underload .. Unlambdaっぽいのだが入力命令が見当たらない。
+
+Vitsy .. よさそう。 http://esolangs.org/wiki/Vitsy
+Whirl .. 0と1だけで実質よくあるesolangっぽい。
+Woefully .. なんかよくわからない木でプログラミングするやつ。
+公式ドキュメントがクソ。
+http://meta.codegolf.stackexchange.com/questions/6918/what-programming-languages-have-been-created-by-ppcg-users/7605
+入出力がクソで、各桁の一番上の桁が取り出せればよさそうなのだが、乗算と減算のみでつらそう。
+
+Yup .. 解けそうだが、インタプリタがjsでinputエラーを出すのでだめ。
