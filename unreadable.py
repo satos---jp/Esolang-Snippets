@@ -51,124 +51,85 @@ def decmem(x):
 	return let(x,dec(get(x)))
 
 def incn(x,n):
-	for i in xrange(n):
+	for i in range(n):
 		x = inc(x)
 	return x
 
-from Tkinter import Tk
 
-r = Tk()
-r.clipboard_clear()
-
+def decn(x,n):
+	for i in range(n):
+		x = dec(x)
+	return x
 
 def notx(x):
 	return tern(x,dec(ret1()),ret1())
 
 def getn(n):
 	return get(retx(n))
-s = (
-	tikuzi(
-		wnz(
-			let(
-				ret1(),
-				inc(getc())
-			),
-			incmem(getn(1))
-		), #input
-		tikuzi(
-			tikuzi(
-				let(ret1(),ret1()),
-				wnz(
-					notx(get(inc(getn(1)))),
-					incmem(ret1())
-				)
-			), #‚±‚±‚Ü‚Å‚ÅAmem[1]‚ª0x31‚É‚È‚Á‚Ä‚é‚Í‚¸B
-			wnz(
-				get(incmem(ret1())), 
-				wnz( #0‚É‚È‚é‚Ü‚Åoutput.
-					get(getn(1)),
-					tikuzi(
-						putc(dec(getn(1))),
-						decmem(getn(1))
-					)
-				)
-			)
-		)
-	)
-)
-r.clipboard_append(s)
 
-print s
+def tikus(v):
+  res = v[0]
+  v = v[1:]
+  while len(v)>0:
+    res = tikuzi(res,v[0])
+    v = v[1:]
+  return res
 
-exit(-1)
+def letn(n,x):
+  return let(retx(n),x)
 
 s = (
-	#putc(let(dec(ret1()),dec(retx(0x65))))
-	
-	#wnz(inc(putc(getc())),ret1()) 
-	#echo ‚½‚¾‚µ 
-	# runtime error: unichr() arg not in range(0x110000) (wide Python build)
-	#‚Å—‚¿‚éB
-
-	tikuzi(
-		wnz(
-			let(
-				ret1(),
-				inc(getc())
-			),
-			incmem(get(ret1()))
-		), #input
-		tikuzi(
-			let(ret1(),retx(0x30)),
-			wnz(
-				get(incmem(ret1())), 
-				wnz( #0‚É‚È‚é‚Ü‚Åoutput.
-					get(get(ret1())),
-					tikuzi(
-						putc(dec(get(ret1()))),
-						decmem(get(ret1()))
-					)
-				)
-			)
-		)
-	)
+  tikus([
+    letn(6,retx(5)),
+    letn(7,retx(42)),
+    wnz(getn(6),tikus([
+      let(getn(6),decn(getc(),48)),
+      letn(6,dec(getn(6))),
+    ])),
+    #putc(incn(getn(2),48)),
+    #putc(incn(getn(2),48)),
+    wnz(getn(2),tikus([
+      letn(1,incn(getn(1),10)),
+      letn(2,dec(getn(2))),
+    ])),
+    wnz(getn(5),tikus([
+      letn(4,incn(getn(4),10)),
+      letn(5,dec(getn(5))),
+    ])),
+    #inputted 3 :: h, 1 :: w
+    
+    #putc(retx(65)),
+    wnz(getn(1),tikus([
+      putc(getn(7)),
+      letn(2,inc(getn(2))),
+      letn(1,dec(getn(1))),
+    ])),
+    putc(retx(10)),
+    letn(2,decn(getn(2),2)),
+    letn(4,decn(getn(4),2)),
+    wnz(getn(4),tikus([
+      putc(getn(7)),
+      wnz(getn(2),tikus([
+        putc(retx(32)),
+        letn(2,dec(getn(2))),
+        letn(1,inc(getn(1))),
+      ])),
+      wnz(getn(1),tikus([
+        letn(2,inc(getn(2))),
+        letn(1,dec(getn(1))),
+      ])),
+      putc(getn(7)),
+      putc(retx(10)),
+      letn(4,dec(getn(4))),
+    ])),
+    letn(2,incn(getn(2),2)),
+    
+    wnz(getn(2),tikus([
+      putc(getn(7)),
+      letn(2,dec(getn(2))),
+    ])),
+  ])
 )
-r.clipboard_append(s)
 
-"""
-s = (
-	tikuzi(
-		wnz(
-			let(
-				ret1(),
-				inc(getc())
-			),
-			incmem(get(ret1()))
-		), #input
-		tikuzi(
-			let(ret1(),retx(0x30)),
-			wnz(
-				get(incmem(ret1())), 
-				putc(dec(get(ret1())))
-			)
-		)
-	)
-)
-"""
+print(s)
 
-"""
-s = (
-	tikuzi(
-		let(ret1(),getc()),
-		tikuzi(
-			incmem(ret1()),
-			putc(get(ret1()))
-		)
-	)
-)
-"""
-
-#s = putc(getc())
-
-
-#print s
