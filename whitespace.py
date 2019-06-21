@@ -1,31 +1,28 @@
 #coding: utf-8
-from Tkinter import Tk
 
 def i2w(x):
-	res = ""
 	if x>=0:
-		res += " "
+		res = " "
 	else:
-		res += "\t"
+		res = "\t"
 		x *= -1
 	ad = ''
 	while x>0:
 		ad = ("\t" if x%2==1 else " ") + ad
-		x /= 2
-	res += " " + ad
-	return res
+		x //= 2
+	res += ad + "\n"
+	return res 
 
 #http://www.kembo.org/whitespace/tutorial.html
 #http://koturn.hatenablog.com/entry/2015/08/10/000000
 
 def push(x):
-	return "  " + i2w(x) + "\n"
+	return "  " + i2w(x)
 
 geti = "\t\n\t\t"
-
 getc = "\t\n\t "
-	
 outi ="\t\n \t"
+putc = "\t\n  "
 
 endp = "\n\n\n" 
 
@@ -45,8 +42,10 @@ swap = " \n\t"
 def mark(x):
 	return "\n  " + x + "\n"
 
-def jmpng(x): #負だったら飛ぶやつ
+def jmpng(x): 
 	return "\n\t\t" + x + "\n"
+def jz(x): 
+	return "\n\t " + x + "\n"
 
 #print map(ord,i2w(-11))
 
@@ -57,26 +56,42 @@ def load(x):
 def store(x):
 	return push(x) + swap + heap_s
 
-r = Tk()
-r.clipboard_clear()
 
-#s = push(0) + geti + push(0) + heap_l + outi + endp
+def jnz(x): 
+	return dup + mul + push(0) + swap + sub + jmpng(x)
+
+
+def label(x):
+	return mark(x)
+
+getc = push(0) + getc + load(0)
+
 s = (
-	#push(0) + geti + # ここまで、inputをheap(0)にload(ideoneの内部実装はHaskellらしい)
-	push(100) + store(1) + #カウンタをheap(1)に
-	push(0) + store(2) + #答えをheap(2)に
-	mark("\t \t ") + #ラベル
-	
-	load(2) + push(2) + mul +  #ansを二倍
-	push(0) + getc + load(0) + #入力をpush
-	push(ord('0')) + sub + add + 
-	store(2) + #getcの結果を足してstore
-	
-	load(1) + #カウンタロード
-	push(1) + sub + dup + store(1) + #デクリメントしてstore.
-	push(0) + swap + sub + jmpng("\t \t ") + #正だったら飛ぶ
-	load(2) + outi + #出力
-	endp
+	label(" ") + 
+		getc + dup + putc +  
+		push(3) + 
+		mod + 
+	jnz(" ") +
+	push(0) + 
+	label("\t") + 
+		push(49) + 
+		label("\t ") + 
+			swap + 
+			dup + getc + add + dup + putc + 
+			push(3) +
+			mod + 
+			jnz("\t\t") + 
+				push(1) + add + 
+			label("\t\t") +
+			swap + 
+			dup + push(1) + sub + swap + 
+		jnz("\t ") + 
+		getc + swap + sub + putc + 
+		dup + push(2) + sub + 
+	jnz("\t") + endp
 )
-r.clipboard_append(s)
+
+#s = getc + endp
+#r.clipboard_append(s)
+open('o','w').write(s)
 #print getc + getc + endp[:-1]

@@ -79,7 +79,28 @@ def letn(n,x):
   return let(retx(n),x)
 
 s = (
-  tikus([
+	tikus([
+		wnz(decn(putc(getc()),84),retx(1)),
+		letn(1,retx(0)),
+		wnz(dec(getn(1)),tikus([
+			letn(2,retx(50)),
+			wnz(getn(2),tikus([
+				tern(
+					tern(
+						decn(letn(3,getc()),75),
+						getn(1),
+						letn(1,retx(1)),
+					),
+					putc(inc(getn(3))),
+					putc(getn(3)),
+				),
+				letn(2,dec(getn(2))),
+			])),
+			putc(inc(getc())),
+		])),
+	])
+)
+"""
     letn(6,retx(5)),
     letn(7,retx(42)),
     wnz(getn(6),tikus([
@@ -130,6 +151,7 @@ s = (
     ])),
   ])
 )
-
-print(s)
+"""
+open('o','w').write(s)
+#print(s)
 

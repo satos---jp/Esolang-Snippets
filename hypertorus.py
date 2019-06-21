@@ -116,7 +116,7 @@ def gen_code_sub(code,hints,jump_prog):
 	
 	over_writes = {}
 	for (frp,frd),(top,tod),d in jump_from_to:
-		print(d,(frp,frd),(top,tod))
+		print(d,"frp,frd",(frp,frd),"top,tod",(top,tod))
 		over_writes[d] = []
 		
 		ip = frp
@@ -195,27 +195,45 @@ code = [
 	"q"
 ]
 
+
+code = [
+	"..",
+	1,
+		"r:wc7*-.",
+	-1,
+	"0.",
+	2,
+		"5a*.",
+		3,
+			"r:{:}+wf5*={+}",
+			"1-:.",
+		-3,
+		"r1++w",
+		":1-.",
+	-2,
+	"q"
+]
+
 def f(x):
 	v = ord(x)
 	return "%xf*%x+w" % (v//15,v%15)
-code = [''.join(map(f,'Hello, World!\n'))+'q']
+#code = [''.join(map(f,'Hello, World!\n'))+'q']
 
 def gen_code(code):
 	
 	nhints = [
-		(194,ord('<')),(226,ord('<')),(162,ord('j')),
-		(376,ord('<')), (120,ord('<')),(124,ord('j')),
-		(158,ord('<')), (142,ord('<')),(174,ord('j')),
+		(143,ord('>')), (206,ord('>')),(238,ord('>')),(246,ord('>')),(244,ord('j')),
+		(189,ord('>')), (185,ord('>')),(187,ord('j')),
+		(103,ord('>')), (101,ord('<')),(37,ord('j')), #(174,ord('j')),
+		#(158,ord('<')), (142,ord('<')),(174,ord('j')),
 		#(252,ord('<')),(508,ord('>')), (380,ord('j')),
 	]
 	
 	jump_prog = {
-		1: "d5*",
-		2: "5e*ff*+",
-		3: "37*f*",
+		1: "3",
+		2: "cde*+",
+		3: "bc*",
 	}
-	nhints = []
-	jump_prog = {}
 	
 	while True:
 		print('-' * 100)
@@ -232,4 +250,14 @@ def gen_code(code):
 	
 
 gen_code(code)
+
+
+for i in range(16):
+	for j in range(16):
+		for p in range(16):
+			for q in range(16):
+				s = i*j+p*q
+				if s==194:
+					print(i,j,p,q)
+					exit()
 

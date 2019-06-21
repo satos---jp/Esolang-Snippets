@@ -1,0 +1,74 @@
+💬: Read until the next 💬 and puts that string onto the stack
+
+⛽: Reads until the next 🚘 and puts that string onto the stack (can be nested, meant for storing functions)
+🚘
+
+➡: Prints a value from the stack
+
+🚲: Puts True onto the stack
+
+🚳: Puts False onto the stack
+
+🚴: Inverts a boolean value from the stack
+
+👫: Adds two numbers from the stack
+
+👪: Multiplies two numbers from the stack
+
+🌊: Subtracts two numbers from the stack
+
+🍴: Divides two numbers from the stack
+
+💸: Divides two numbers from the stack, returns the remainder
+
+💿: Rounds a number to the nearest integer
+
+📥: Rounds down a number from the stack
+
+📤: Rounds up a number from the stack
+
+🐂: Converts a number to a hex string
+
+🔢: Converts a string to a number
+
+👬: Checks if two numbers are equal
+
+🐣: Checks if a number is less than another
+
+🐔: Checks if a number is greater than another
+
+🔚: Takes a boolean from the stack. If false, skips to the next 🐧.
+
+🔙: If the last 🔚 did not skip past stuff, skip to the next 🐧.
+🐧
+
+🔃: Takes two strings from the stack. Runs the first, takes a boolean. If true, runs the second and repeats.
+
+👥: Duplicates a stack entry
+
+🔣: Converts a character to its character code
+
+🔍: Converts a character code to its character
+
+📲: Takes two objects, saves the first to a variable identified by the second
+
+📱: Takes an object, returns the value from the variable by that name
+
+📃: Returns the length of a string or array from the stack
+
+✂: Takes a string and two numbers. Returns the substring from the string from the first number (inclusive) to the second number (exclusive).
+
+🏃: Evaluates a string
+
+📚: Creates an empty array.
+
+📌: Takes an array and an object. Adds the object to the end of the array. Does not return anything, you'll want to use variables with this.
+
+🔑: Takes an array or string and an index. Returns the value at that index.
+
+🔀: Swaps two elements on the stack.
+
+🔊: Capitalize a string.
+
+🔉: Change a string to lowercase. 
+
