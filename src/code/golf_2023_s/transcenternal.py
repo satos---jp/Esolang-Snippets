@@ -1,5 +1,4 @@
-
-
+from ...libraries import transcenternal
 
 code = {
 	'decl': [ #name, 初期値

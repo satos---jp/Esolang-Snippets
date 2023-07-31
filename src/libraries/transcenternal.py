@@ -114,6 +114,42 @@ def code_to_graph(code):
 		h = th
 	h[0] = h[1] = h
 	
+	def setOp(to,fr,cont):
+		return {
+			0: {
+				0: B0,
+				1: {
+					0: bin2g(to),
+					1: bin2g(fr),
+				}
+			},
+			1: cont
+		}
+
+	def newOp(to,v0,v1,cont):
+		return {
+			0: {
+				0: B1,
+				1: {
+					0: bin2g(to),
+					1: {0: bin2g(v0), 1: bin2g(v1)},
+				}
+			},
+			1: cont
+		}
+	
+	def branchOp(v0,v1,to,cont):
+		return {
+			0: {
+				0: bin2g('00'),
+				1: {
+					0: {0: bin2g(v0), 1: bin2g(v1)},
+					1: bin2g(to),
+				}
+			},
+			1: cont
+		}
+
 	def ops_to_graph(ops,cont):
 		res = cont
 		for op in ops[::-1]:
@@ -121,21 +157,12 @@ def code_to_graph(code):
 		return res
 	
 	cont = B0
-	cont = {
-		0: {
-			0: B0,
-			1: {
-				# 0: bin2g('1' + '11111111'),
-				0: bin2g('1' + '11111111'),
-				1: bin2g(decl_gs[code['output']]),
-			}
-		},
-		1: cont
-	}
+	# cont = setOp('1' + '11111111', decl_gs[code['output']], cont)
+	cont = setOp('1', decl_gs[code['output']], cont)
 	
 	finalCode[1] = ops_to_graph(ops,cont)
 	return finalCode
-	
+
 def print_graph(g):
 	gone = set()
 	def dfs(g):
@@ -190,7 +217,7 @@ if __name__ == '__main__':
 	sample = {
 		'decl': [ # name, 初期値
 #			('O',('b','01001110'[::-1])), #出力
-			('O',('b','01000110'[::-1])), #出力
+			('O',('b','01000110'[::-1] + '01001010'[::-1])), #出力
 #			('P',('b','01000101')),
 		],
 		'output': 'O',
