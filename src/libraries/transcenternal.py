@@ -48,6 +48,20 @@ def echoGraph():
 	res[1] = B0
 	return res
 
+def branchTestGraph():
+	res = {
+		0: {
+			0: {}, #B0
+			1: {}, #B1
+		}
+	}
+	B0 = res[0][0]
+	B1 = res[0][1]
+	B0[0] = B0[1] = B0
+	B1[0] = B1[1] = B1
+	res[1] = B0
+	return res
+
 def printFJ():
 	sample = {
 		'decl': [ # name, 初期値
@@ -101,29 +115,18 @@ def printFD():
 	return code
 
 def code_to_graph(code):
-	def gengenVar():
+	def gengenVar(prefix):
 		vn = 0
 		def genVar():
 			nonlocal vn
 			vn += 1
-			return "V%d" % vn
+			return "%s%d" % (prefix,vn)
 		return genVar
 	
-	genVar = gengenVar()
+	genVar = gengenVar('V')
+	genLabel = gengenVar('L')
 
 	decl = code['decl']
-	ops = code['ops']
-	def _get_branches(ops):
-		res = []
-		for op in ops:
-			ty = op[0]
-			if ty == 'br':
-				v = genVar()
-				res.append((v,None))
-				op.append(v)
-				res += get_branches[op[1]]
-				res += get_branches[op[2]]
-		return res
 
 	finalCode = {
 		0: {
@@ -131,6 +134,7 @@ def code_to_graph(code):
 			1: {}, #B1
 		}
 	}
+	JumpDummy = finalCode[0]
 	B0 = finalCode[0][0]
 	B1 = finalCode[0][1]
 	# とりあえずB1は自己ループ
@@ -173,7 +177,35 @@ def code_to_graph(code):
 	
 	def data_to_graph(data):
 		return data_to_graph_cont(data,B0)
+
+	# Branchingを label + gotoIf に変換する
+	operations = code['ops']
+	"""
+	def conv_branch(ops):
+		for op in ops:
+			ty = op[0]
+			if ty == 'br':
+	"""
 	
+	
+	brlabel_to_addr = {}
+	def add_labels_to_branch(ops):
+		res = []
+		for op in ops:
+			ty = op[0]
+			if ty == 'br':
+				(_,v0v1,thenbr,elsebr) = op
+				label = genLabel()
+				brlabel_to_addr[label] = None
+				op = (ty,v0v1,
+					add_labels_to_branch(thenbr),
+					add_labels_to_branch(elsebr),
+					label)
+			res.append(op)
+		return res
+	
+	operations = add_labels_to_branch(operations)
+
 	# B0,B1に適当なデータを載せておくことができる。
 	# とりあえずB0にデータを乗せておくことにする。
 	# TODO: ちょっと先端が損。
@@ -184,13 +216,50 @@ def code_to_graph(code):
 	for var,data in decl:
 		g = data_to_graph(data)
 		decl_gs[var] = addr + '0'
+
 		addr += '1'
 		th = {}
 		h[0] = g
 		h[1] = th
 		h = th
-	h[0] = h[1] = h
 	
+	brlabel_register = {}
+	for label in brlabel_to_addr.keys():
+		nh = h
+		# brlabel_register[label] = (lambda g: nh.update({0: g}))
+		brlabel_to_addr[label] = addr + '0'
+
+		addr += '1'
+		th = {}
+		h[0] = B0
+		h[1] = th
+		h = th
+	
+	h[0] = h[1] = h
+
+	# ラベルの前計算をする
+	label_to_addr = {}
+	def precalc_labels(ops): #現在のoffを返す
+		def aux(ops,off):
+			for op in ops:
+				ty = op[0]
+				if ty == 'label':
+					label_to_addr[op[1]] = off
+				elif ty == 'br':
+					(_,_,thenbr,elsebr,label) = op
+					aux(thenbr,brlabel_to_addr[label])
+					off = aux(elsebr,off)
+				else:
+					off += '1'
+			return off
+		aux(ops,'01')
+	
+	precalc_labels(operations)
+	
+	print(decl_gs,brlabel_to_addr,label_to_addr)
+	
+	############# Operation Compilation #################
+
 	def setOp(to,fr,cont):
 		return {
 			0: {
@@ -220,10 +289,10 @@ def code_to_graph(code):
 		v0,v1 = v0v1
 		return {
 			0: {
-				0: bin2g('00'),
+				0: JumpDummy, #B0,B1以外ならなんでも
 				1: {
-					0: {0: bin2g(v0), 1: bin2g(v1)},
-					1: bin2g(to),
+					0: {0: data_to_graph(v0), 1: data_to_graph(v1)},
+					1: to,
 				}
 			},
 			1: cont
@@ -237,9 +306,22 @@ def code_to_graph(code):
 				(_,to,fr) = op
 				res = setOp(to,fr,res)
 				continue
-			if ty == 'new':
+			elif ty == 'new':
 				(_,to,v0v1) = op
 				res = newOp(to,v0v1,res)
+				continue
+			elif ty == 'gotoIfaa':
+				(_,v0v1,label) = op
+				to = ('b',label_to_addr[label])
+				res = branchOp(v0v1,to,res)
+				continue
+			elif ty == 'br':
+				(_,v0v1,thenbr,elsebr,label) = op
+				gthen = ops_to_graph(thenbr,cont)
+				gelse = ops_to_graph(elsebr,cont)
+				# thenaddr = brlabel_to_addr[label]
+				# brlabel_register[label](gthen)
+				res = branchOp(v0v1,gthen,gelse)
 				continue
 			print('Unknown op',op)
 			assert False
@@ -249,7 +331,20 @@ def code_to_graph(code):
 	# cont = setOp('1' + '11111111', decl_gs[code['output']], cont)
 	cont = setOp(('b','1'), ('b',decl_gs[code['output']]), cont)
 	
-	finalCode[1] = ops_to_graph(ops,cont)
+	codeGraph = ops_to_graph(operations,cont)
+	# codeGraph[0][1] [0][0] [1][1][0] = B1  
+	finalCode[1] = codeGraph
+	# finalCode[1] = ops_to_graph(operations,cont)
+	"""
+	cont = B0
+	h = {}
+	B0[0] = B0[1] = h
+	h[0] = B0
+	h[1] = setOp(('b','10'),('b','001'),cont)
+	B0addr = ('b','000')
+	gtaddr = ('b','0001')
+	finalCode[1] = branchOp((B0addr,B0addr),gtaddr,cont)
+	"""
 	return finalCode
 
 def B0():
@@ -307,7 +402,7 @@ def graph_to_output(g):
 				res.append(t0['n'])
 	
 	dfs(g)
-	# print_graph(g)
+	print_graph(g)
 	
 	return b' '.join(res)
 	
