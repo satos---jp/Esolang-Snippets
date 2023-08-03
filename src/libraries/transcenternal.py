@@ -61,6 +61,45 @@ def printFJ():
 	}
 	return sample
 
+def printG():
+	code = {
+		'decl': [ # name, 初期値
+			('O',('b','')), # 出力
+		],
+		'output': 'O',
+		'ops': [
+			('new',('v','O'),(B0(),('v','O'))),
+			('new',('v','O'),(B1(),('v','O'))),
+			('new',('v','O'),(B0(),('v','O'))),
+			('new',('v','O'),(B0(),('v','O'))),
+			('new',('v','O'),(B0(),('v','O'))),
+			('new',('v','O'),(B1(),('v','O'))),
+			('new',('v','O'),(B1(),('v','O'))),
+			('new',('v','O'),(B1(),('v','O'))),
+		]
+	}
+	return code
+
+def printFD():
+	code = {
+		'decl': [ # name, 初期値
+			('O',('b','')), # 出力
+			('H',('N',B0(),B0())), # outputの先端
+		],
+		'output': 'O',
+		'ops': [
+			('set',('v','O'),('v','H')),
+			*sum([
+				[
+				('new',('ra',('v','H'),'1'),(B0() if c == '0' else B1(),B0())),
+				('set',('v','H'),('ra',('v','H'),'1')),
+				] for c in ('01000110'[::-1] + '01000100'[::-1])],[]
+			),
+			('set',('v','O'),('ra',('v','O'),'1')),
+		]
+	}
+	return code
+
 def code_to_graph(code):
 	def gengenVar():
 		vn = 0
@@ -97,34 +136,43 @@ def code_to_graph(code):
 	# とりあえずB1は自己ループ
 	B1[0] = B1[1] = B1
 	
-	def bin2g(s):
+	def bin2g_cont(s,cont):
 		assert(all(map(lambda c: c in '01',s)))
-		res = B0
+		res = cont
 		for c in s[::-1]:
 			c = B0 if c == '0' else B1
 			res = { 0: c, 1: res }
 		return res
 	
-	def data_to_graph(data):
+	def bin2g(s):	
+		return bin2g_cont(s,B0)
+	
+	def data_to_graph_cont(data,cont):
 		ty = data[0]
 		if ty == 'b': # raw binary
-			return  bin2g(data[1])
+			return  bin2g_cont(data[1],cont)
 		elif ty == 'c': # constant
 			c = data[1]
 			if c == 'B0':
-				return bin2g('000')
+				return bin2g_cont('000',cont)
 			elif c == 'B1':
-				return bin2g('001')
+				return bin2g_cont('001',cont)
 		elif ty == 'N': # new 
 			return {
-				0: data_to_graph(data[1]),
-				1: data_to_graph(data[2])
+				0: data_to_graph_cont(data[1],cont),
+				1: data_to_graph_cont(data[2],cont)
 			}
 		elif ty == 'v': # address of variable
-			return bin2g(decl_gs[data[1]])
+			return bin2g_cont(decl_gs[data[1]],cont)
+		elif ty == 'ra': # relative address after variable
+			(_,d,rel) = data
+			return data_to_graph_cont(d,bin2g_cont(rel,cont))
 
 		print('Unknown data',data)
 		assert False
+	
+	def data_to_graph(data):
+		return data_to_graph_cont(data,B0)
 	
 	# B0,B1に適当なデータを載せておくことができる。
 	# とりあえずB0にデータを乗せておくことにする。
@@ -161,8 +209,8 @@ def code_to_graph(code):
 			0: {
 				0: B1,
 				1: {
-					0: bin2g(to),
-					1: {0: bin2g(v0), 1: bin2g(v1)},
+					0: data_to_graph(to),
+					1: {0: data_to_graph(v0), 1: data_to_graph(v1)},
 				}
 			},
 			1: cont
@@ -188,6 +236,10 @@ def code_to_graph(code):
 			if ty == 'set':
 				(_,to,fr) = op
 				res = setOp(to,fr,res)
+				continue
+			if ty == 'new':
+				(_,to,v0v1) = op
+				res = newOp(to,v0v1,res)
 				continue
 			print('Unknown op',op)
 			assert False
@@ -255,7 +307,7 @@ def graph_to_output(g):
 				res.append(t0['n'])
 	
 	dfs(g)
-	print_graph(g)
+	# print_graph(g)
 	
 	return b' '.join(res)
 	
