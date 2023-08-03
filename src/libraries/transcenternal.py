@@ -15,10 +15,10 @@
          v
        next op
 
-input :: c1 -> c2 ... cn -> B0
-           |     | 
-           v     v
-         B0/B1 B0/B1
+input :: c1 -1-> c2 ... cn -1-> B0
+         0|      0| 
+          v       v
+        B0/B1   B0/B1
  
  000 :: B0
  001 :: B1
@@ -48,6 +48,19 @@ def echoGraph():
 	res[1] = B0
 	return res
 
+def printFJ():
+	sample = {
+		'decl': [ # name, 初期値
+#			('O',('b','01001110'[::-1])), #出力
+			('O',('b','01000110'[::-1] + '01001010'[::-1])), #出力
+#			('P',('b','01000101')),
+		],
+		'output': 'O',
+		'ops': [
+		]
+	}
+	return sample
+
 def code_to_graph(code):
 	def gengenVar():
 		vn = 0
@@ -61,7 +74,7 @@ def code_to_graph(code):
 
 	decl = code['decl']
 	ops = code['ops']
-	def get_branches(ops):
+	def _get_branches(ops):
 		res = []
 		for op in ops:
 			ty = op[0]
@@ -94,8 +107,24 @@ def code_to_graph(code):
 	
 	def data_to_graph(data):
 		ty = data[0]
-		if ty == 'b':
+		if ty == 'b': # raw binary
 			return  bin2g(data[1])
+		elif ty == 'c': # constant
+			c = data[1]
+			if c == 'B0':
+				return bin2g('000')
+			elif c == 'B1':
+				return bin2g('001')
+		elif ty == 'N': # new 
+			return {
+				0: data_to_graph(data[1]),
+				1: data_to_graph(data[2])
+			}
+		elif ty == 'v': # address of variable
+			return bin2g(decl_gs[data[1]])
+
+		print('Unknown data',data)
+		assert False
 	
 	# B0,B1に適当なデータを載せておくことができる。
 	# とりあえずB0にデータを乗せておくことにする。
@@ -119,14 +148,15 @@ def code_to_graph(code):
 			0: {
 				0: B0,
 				1: {
-					0: bin2g(to),
-					1: bin2g(fr),
+					0: data_to_graph(to),
+					1: data_to_graph(fr),
 				}
 			},
 			1: cont
 		}
 
-	def newOp(to,v0,v1,cont):
+	def newOp(to,v0v1,cont):
+		v0,v1 = v0v1
 		return {
 			0: {
 				0: B1,
@@ -138,7 +168,8 @@ def code_to_graph(code):
 			1: cont
 		}
 	
-	def branchOp(v0,v1,to,cont):
+	def branchOp(v0v1,to,cont):
+		v0,v1 = v0v1
 		return {
 			0: {
 				0: bin2g('00'),
@@ -153,15 +184,39 @@ def code_to_graph(code):
 	def ops_to_graph(ops,cont):
 		res = cont
 		for op in ops[::-1]:
-			pass
+			ty = op[0]
+			if ty == 'set':
+				(_,to,fr) = op
+				res = setOp(to,fr,res)
+				continue
+			print('Unknown op',op)
+			assert False
 		return res
 	
 	cont = B0
 	# cont = setOp('1' + '11111111', decl_gs[code['output']], cont)
-	cont = setOp('1', decl_gs[code['output']], cont)
+	cont = setOp(('b','1'), ('b',decl_gs[code['output']]), cont)
 	
 	finalCode[1] = ops_to_graph(ops,cont)
 	return finalCode
+
+def B0():
+	return ('c','B0')
+
+def B1():
+	return ('c','B1')
+
+def N(v0,v1):
+	return ('N',v0,v1)
+
+def char(n):
+	return ('b','1' + '1'*n + '0')
+
+def rel(v,rel):
+	return ('rel',v,rel)
+
+
+############## Graph related codes ####################################
 
 def print_graph(g):
 	gone = set()
@@ -217,7 +272,7 @@ if __name__ == '__main__':
 	sample = {
 		'decl': [ # name, 初期値
 #			('O',('b','01001110'[::-1])), #出力
-			('O',('b','01000110'[::-1] + '01001010'[::-1])), #出力
+			('O',('b','')), #出力
 #			('P',('b','01000101')),
 		],
 		'output': 'O',

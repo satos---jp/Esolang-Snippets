@@ -1,4 +1,4 @@
-from ...libraries import transcenternal
+from ...libraries.transcenternal import *
 
 code = {
 	'decl': [ #name, 初期値
@@ -6,8 +6,9 @@ code = {
 		('cnt',B0()),
 		('O',B0()), #出力
 		('F0',N(N(B0(),B0()),N(B0(),B0()))), #フラッシュの初期化定数
-		('F',B0()), #フラッシュ用の配列
+		('F',B0()), #フラッシュの文字
 	],
+	'output': 'O',
 	'ops': [
 		('label','outer'),
 		('set','F','F0'),
@@ -36,5 +37,21 @@ code = {
 		('gotoIf',('x',B0()),'outer'),
 	]
 }
+
+code = {
+	'decl': [ # name, 初期値
+		('O',('b','')), # 出力
+		('H',('b','01000110'[::-1] + '01001010'[::-1])), # outputの先端
+	],
+	'output': 'O',
+	'ops': [
+		('set',('v','O'),('v','H')),
+	]
+}
+
+
+# code = printFJ()
+
+compile(code,'o')
 
 
