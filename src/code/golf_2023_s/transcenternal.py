@@ -1,4 +1,5 @@
 from ...libraries.transcenternal import *
+from ...libraries.transcenternal_interpreter import *
 
 X = ('v','X')
 C = ('v','C')
@@ -72,16 +73,36 @@ code = {
 	]
 }
 
-G = ('v','G')
-code = {
-	'decl': [
+_code = {
+	'decl': [ # name, 初期値
 		('O',('b','')), # 出力
-		('G',('b','01100010' + '11100010')),
-		('X',('b','01100010' + '00011010')),
+		('H',('N',B0(),B0())), # outputの先端
 	],
 	'output': 'O',
 	'ops': [
-		('br',(char(0),B0()),[('set',O,G)],[('set',O,X)])
+		('set',('v','O'),('v','H')),
+		*print_char_op('Y'),
+		*print_char_op('e'),
+		('set',('v','O'),('ra',('v','O'),'1')),
+	]
+}
+
+"""
+		('br',(char(0),B0()),
+			[*print_char_op('N')],
+			[*print_char_op('Y')],
+		),
+"""
+G = ('v','G')
+_code = {
+	'decl': [
+		('O',('b','')), # 出力
+		('G',('b','10011010')),
+		('X',('b','01110010')),
+	],
+	'output': 'O',
+	'ops': [
+		('br',(char(0),B1()),[('set',O,G)],[('set',O,X)])
 	]
 }
 
@@ -123,8 +144,12 @@ _code = {
 }
 
 # print(code)
-# code = printFJ()
-
+# code = printFD()
+# code = branchTestGraph()
+g = code_to_graph(code)
+# g = echoGraph()
+s = graph_to_output(g)
+interpreter(g,b"c2")
 compile(code,'o')
 
 

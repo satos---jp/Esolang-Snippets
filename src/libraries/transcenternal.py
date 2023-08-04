@@ -48,20 +48,6 @@ def echoGraph():
 	res[1] = B0
 	return res
 
-def branchTestGraph():
-	res = {
-		0: {
-			0: {}, #B0
-			1: {}, #B1
-		}
-	}
-	B0 = res[0][0]
-	B1 = res[0][1]
-	B0[0] = B0[1] = B0
-	B1[0] = B1[1] = B1
-	res[1] = B0
-	return res
-
 def printFJ():
 	sample = {
 		'decl': [ # name, 初期値
@@ -114,15 +100,29 @@ def printFD():
 	}
 	return code
 
+def Check_LSB_1():
+	code = {
+		'decl': [
+			('O',('b','')), # 出力
+			('G',('b','10011010')),
+			('X',('b','01110010')),
+		],
+		'output': 'O',
+		'ops': [
+			('br',(char(0),B1()),[('set',('v','O'),('v','G'))],[('set',('v','O'),('v','X'))])
+		]
+	}
+	return code
+
+def gengenVar(prefix):
+	vn = 0
+	def genVar():
+		nonlocal vn
+		vn += 1
+		return "%s%d" % (prefix,vn)
+	return genVar
+
 def code_to_graph(code):
-	def gengenVar(prefix):
-		vn = 0
-		def genVar():
-			nonlocal vn
-			vn += 1
-			return "%s%d" % (prefix,vn)
-		return genVar
-	
 	genVar = gengenVar('V')
 	genLabel = gengenVar('L')
 
@@ -178,33 +178,7 @@ def code_to_graph(code):
 	def data_to_graph(data):
 		return data_to_graph_cont(data,B0)
 
-	# Branchingを label + gotoIf に変換する
 	operations = code['ops']
-	"""
-	def conv_branch(ops):
-		for op in ops:
-			ty = op[0]
-			if ty == 'br':
-	"""
-	
-	
-	brlabel_to_addr = {}
-	def add_labels_to_branch(ops):
-		res = []
-		for op in ops:
-			ty = op[0]
-			if ty == 'br':
-				(_,v0v1,thenbr,elsebr) = op
-				label = genLabel()
-				brlabel_to_addr[label] = None
-				op = (ty,v0v1,
-					add_labels_to_branch(thenbr),
-					add_labels_to_branch(elsebr),
-					label)
-			res.append(op)
-		return res
-	
-	operations = add_labels_to_branch(operations)
 
 	# B0,B1に適当なデータを載せておくことができる。
 	# とりあえずB0にデータを乗せておくことにする。
@@ -223,40 +197,9 @@ def code_to_graph(code):
 		h[1] = th
 		h = th
 	
-	brlabel_register = {}
-	for label in brlabel_to_addr.keys():
-		nh = h
-		# brlabel_register[label] = (lambda g: nh.update({0: g}))
-		brlabel_to_addr[label] = addr + '0'
-
-		addr += '1'
-		th = {}
-		h[0] = B0
-		h[1] = th
-		h = th
-	
 	h[0] = h[1] = h
-
-	# ラベルの前計算をする
-	label_to_addr = {}
-	def precalc_labels(ops): #現在のoffを返す
-		def aux(ops,off):
-			for op in ops:
-				ty = op[0]
-				if ty == 'label':
-					label_to_addr[op[1]] = off
-				elif ty == 'br':
-					(_,_,thenbr,elsebr,label) = op
-					aux(thenbr,brlabel_to_addr[label])
-					off = aux(elsebr,off)
-				else:
-					off += '1'
-			return off
-		aux(ops,'01')
 	
-	precalc_labels(operations)
-	
-	print(decl_gs,brlabel_to_addr,label_to_addr)
+	print(decl_gs)
 	
 	############# Operation Compilation #################
 
@@ -315,12 +258,13 @@ def code_to_graph(code):
 				to = ('b',label_to_addr[label])
 				res = branchOp(v0v1,to,res)
 				continue
+			elif ty == 'label':
+				label_to_graph = {}
+				continue
 			elif ty == 'br':
-				(_,v0v1,thenbr,elsebr,label) = op
-				gthen = ops_to_graph(thenbr,cont)
-				gelse = ops_to_graph(elsebr,cont)
-				# thenaddr = brlabel_to_addr[label]
-				# brlabel_register[label](gthen)
+				(_,v0v1,thenbr,elsebr) = op
+				gthen = ops_to_graph(thenbr,res)
+				gelse = ops_to_graph(elsebr,res)
 				res = branchOp(v0v1,gthen,gelse)
 				continue
 			print('Unknown op',op)
@@ -365,6 +309,17 @@ def rel(v,rel):
 
 ############## Graph related codes ####################################
 
+def check_all_node_has_n(g):
+	gone = set()	
+	def aux(g):
+		n = g['n']
+		if n in gone:
+			return
+		gone.add(n)
+		aux(g[0])
+		aux(g[1])
+	aux(g)
+
 def print_graph(g):
 	gone = set()
 	def dfs(g):
@@ -381,12 +336,9 @@ def print_graph(g):
 
 
 def graph_to_output(g):
-	n = 0
-	def genVar():
-		nonlocal n
-		n += 1
-		return b"%d" % n
-	
+	genV = gengenVar('')
+	genVar = lambda: genV().encode('ascii')
+
 	v = genVar()
 	res = [v]
 	g['n'] = v
@@ -394,18 +346,18 @@ def graph_to_output(g):
 		for nxt in [0,1]:
 			t0 = g[nxt]
 			if not 'n' in t0:
-				v0 = genVar()
-				t0['n'] = v0
-				res.append(v0)
+				v = genVar()
+				t0['n'] = v
+				res.append(v)
 				dfs(t0)
 			else:
 				res.append(t0['n'])
 	
 	dfs(g)
-	print_graph(g)
+	check_all_node_has_n(g)
+	# print_graph(g)
 	
 	return b' '.join(res)
-	
 
 def compile(code,save=None):
 	g = code_to_graph(code)
