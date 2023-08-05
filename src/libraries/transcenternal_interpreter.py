@@ -1,6 +1,6 @@
 import sys
 
-def interpreter(g,input,binDep=30):
+def interpreter(g,input,binDep=100):
 	def gengenVar(prefix):
 		vn = 0
 		def genVar():
@@ -79,6 +79,7 @@ def interpreter(g,input,binDep=30):
 			g[0][1] = g[0][1][1]
 		else:
 			sys.stdout.write('Branch ')
+			# print(a1,a2,op['n'])
 			a1 = g_to_addr(op[0][1][0][0])
 			a2 = g_to_addr(op[0][1][0][1])
 			g1 = getg(g,a1)
@@ -99,4 +100,6 @@ def interpreter(g,input,binDep=30):
 		outs.append(c)
 	outs = bytes(outs)
 	print(outs,output)
+	return outarr,outs
+
 

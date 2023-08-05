@@ -33,87 +33,6 @@ input :: c1 -1-> c2 ... cn -1-> B0
  1 :: input/output
 """
 
-
-def echoGraph():
-	res = {
-		0: {
-			0: {}, #B0
-			1: {}, #B1
-		}
-	}
-	B0 = res[0][0]
-	B1 = res[0][1]
-	B0[0] = B0[1] = B0
-	B1[0] = B1[1] = B1
-	res[1] = B0
-	return res
-
-def printFJ():
-	sample = {
-		'decl': [ # name, 初期値
-#			('O',('b','01001110'[::-1])), #出力
-			('O',('b','01000110'[::-1] + '01001010'[::-1])), #出力
-#			('P',('b','01000101')),
-		],
-		'output': 'O',
-		'ops': [
-		]
-	}
-	return sample
-
-def printG():
-	code = {
-		'decl': [ # name, 初期値
-			('O',('b','')), # 出力
-		],
-		'output': 'O',
-		'ops': [
-			('new',('v','O'),(B0(),('v','O'))),
-			('new',('v','O'),(B1(),('v','O'))),
-			('new',('v','O'),(B0(),('v','O'))),
-			('new',('v','O'),(B0(),('v','O'))),
-			('new',('v','O'),(B0(),('v','O'))),
-			('new',('v','O'),(B1(),('v','O'))),
-			('new',('v','O'),(B1(),('v','O'))),
-			('new',('v','O'),(B1(),('v','O'))),
-		]
-	}
-	return code
-
-def printFD():
-	code = {
-		'decl': [ # name, 初期値
-			('O',('b','')), # 出力
-			('H',('N',B0(),B0())), # outputの先端
-		],
-		'output': 'O',
-		'ops': [
-			('set',('v','O'),('v','H')),
-			*sum([
-				[
-				('new',('ra',('v','H'),'1'),(B0() if c == '0' else B1(),B0())),
-				('set',('v','H'),('ra',('v','H'),'1')),
-				] for c in ('01000110'[::-1] + '01000100'[::-1])],[]
-			),
-			('set',('v','O'),('ra',('v','O'),'1')),
-		]
-	}
-	return code
-
-def Check_LSB_1():
-	code = {
-		'decl': [
-			('O',('b','')), # 出力
-			('G',('b','10011010')),
-			('X',('b','01110010')),
-		],
-		'output': 'O',
-		'ops': [
-			('br',(char(0),B1()),[('set',('v','O'),('v','G'))],[('set',('v','O'),('v','X'))])
-		]
-	}
-	return code
-
 def gengenVar(prefix):
 	vn = 0
 	def genVar():
@@ -241,8 +160,11 @@ def code_to_graph(code):
 			1: cont
 		}
 
-	def ops_to_graph(ops,cont):
-		res = cont
+	# gotoIfとlabelの解決される順番に依る
+	label_to_graph = {}
+	graph_resolved_by_label = {}
+
+	def ops_to_graph(ops,res):
 		for op in ops[::-1]:
 			ty = op[0]
 			if ty == 'set':
@@ -253,13 +175,41 @@ def code_to_graph(code):
 				(_,to,v0v1) = op
 				res = newOp(to,v0v1,res)
 				continue
-			elif ty == 'gotoIfaa':
+			elif ty in ['gotoIfEq','gotoIfNe']:
 				(_,v0v1,label) = op
-				to = ('b',label_to_addr[label])
-				res = branchOp(v0v1,to,res)
+				gthen = None
+				if label in label_to_graph:
+					gthen = label_to_graph[label]
+				
+				if ty == 'gotoIfEq':
+					res = branchOp(v0v1,gthen,res)
+					tmpg = res[0][1]
+				elif ty == 'gotoIfNe':
+					res = branchOp(v0v1,res,gthen)
+					tmpg = res
+				else:
+					assert False
+
+				if gthen is None:
+					if not label in graph_resolved_by_label:
+						graph_resolved_by_label[label] = []
+					print(op,label_to_graph,graph_resolved_by_label)
+					
+					assert(tmpg[1] is None)
+					# print('Lazy update',id(tmpg))
+					# lam = lambda tmpg: lambda g: print('upd',id(tmpg),label,tmpg.update({1: g}))
+					lam = lambda tmpg: lambda g: tmpg.update({1: g})
+					graph_resolved_by_label[label].append(lam(tmpg))
 				continue
 			elif ty == 'label':
-				label_to_graph = {}
+				(_,label) = op
+				label_to_graph[label] = res
+				# print('Update',label)
+				if not label in graph_resolved_by_label:
+					continue
+				for f in graph_resolved_by_label[label]:
+					# print('Update',label,f)
+					f(res)
 				continue
 			elif ty == 'br':
 				(_,v0v1,thenbr,elsebr) = op
@@ -271,12 +221,14 @@ def code_to_graph(code):
 			assert False
 		return res
 	
+
 	cont = B0
 	# cont = setOp('1' + '11111111', decl_gs[code['output']], cont)
 	cont = setOp(('b','1'), ('b',decl_gs[code['output']]), cont)
 	
 	codeGraph = ops_to_graph(operations,cont)
 	# codeGraph[0][1] [0][0] [1][1][0] = B1  
+	print(graph_resolved_by_label)
 	finalCode[1] = codeGraph
 	# finalCode[1] = ops_to_graph(operations,cont)
 	"""
@@ -304,7 +256,7 @@ def char(n):
 	return ('b','1' + '1'*n + '0')
 
 def rel(v,rel):
-	return ('rel',v,rel)
+	return ('ra',v,rel)
 
 
 ############## Graph related codes ####################################
@@ -345,6 +297,10 @@ def graph_to_output(g):
 	def dfs(g):
 		for nxt in [0,1]:
 			t0 = g[nxt]
+			if t0 is None:
+				print('Found None node',id(g))
+				assert False
+				continue
 			if not 'n' in t0:
 				v = genVar()
 				t0['n'] = v
@@ -354,7 +310,7 @@ def graph_to_output(g):
 				res.append(t0['n'])
 	
 	dfs(g)
-	check_all_node_has_n(g)
+	# check_all_node_has_n(g)
 	# print_graph(g)
 	
 	return b' '.join(res)
