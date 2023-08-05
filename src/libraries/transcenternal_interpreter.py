@@ -18,13 +18,13 @@ def interpreter(g,input,binDep=100):
 			c = B0 if c == '0' else B1
 			res = { 0: c, 1: res, 'n': genVar() }
 		return res
-	def g_to_addr(g):
+	def g_to_addr(g,depLimit=binDep):
 		res = []
 		# print('g_to_addr',res,g.keys())
 		cnt = 0
 		while g['n'] != B0['n']:
 			cnt += 1
-			if cnt > binDep:
+			if cnt > depLimit:
 				print("Address too Deep",res)
 				assert False
 			c = 0 if g[0]['n'] == B0['n'] else 1
@@ -51,7 +51,7 @@ def interpreter(g,input,binDep=100):
 	opcnt = 0
 	while True:
 		opcnt += 1
-		if opcnt > 1000:
+		if opcnt > 100000:
 			print('Too many operations')
 			assert False
 		if g[0][1]['n'] == B0['n']:
@@ -89,7 +89,7 @@ def interpreter(g,input,binDep=100):
 			print(a1,a2,gt['n'],gf['n'])
 			g[0][1] = gt if g1['n'] == g2['n'] else gf
 
-	output = g_to_addr(g[1])
+	output = g_to_addr(g[1],depLimit=10000)
 	outarr = output
 	outs = []
 	output += [0 for _ in range((8-len(output)%8)%8)]

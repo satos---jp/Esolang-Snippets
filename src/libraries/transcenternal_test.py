@@ -1,9 +1,6 @@
 from transcenternal import *
 from transcenternal_interpreter import interpreter
 
-def var(x):
-	return ('v',x)
-
 def echoGraph():
 	res = {
 		0: {

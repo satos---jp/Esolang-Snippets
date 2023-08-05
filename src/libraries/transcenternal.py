@@ -193,7 +193,7 @@ def code_to_graph(code):
 				if gthen is None:
 					if not label in graph_resolved_by_label:
 						graph_resolved_by_label[label] = []
-					print(op,label_to_graph,graph_resolved_by_label)
+					print(op,label_to_graph.keys(),graph_resolved_by_label)
 					
 					assert(tmpg[1] is None)
 					# print('Lazy update',id(tmpg))
@@ -258,6 +258,8 @@ def char(n):
 def rel(v,rel):
 	return ('ra',v,rel)
 
+def var(x):
+	return ('v',x)
 
 ############## Graph related codes ####################################
 
@@ -313,6 +315,17 @@ def graph_to_output(g):
 	# check_all_node_has_n(g)
 	# print_graph(g)
 	
+	import string
+	cs = list(set(string.printable)-set(string.whitespace))
+	def conv(n):
+		N = len(cs)
+		res = b""
+		while n > 0:
+			res += bytes([ord(cs[n%N])])
+			n //= N
+		return res
+	
+	res = list(map(lambda d: conv(int(d)),res))
 	return b' '.join(res)
 
 def compile(code,save=None):
