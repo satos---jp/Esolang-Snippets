@@ -67,20 +67,6 @@ def printFD():
 	}
 	return code
 
-def Check_LSB_1():
-	code = {
-		'decl': [
-			('O',('b','')), # 出力
-			('G',('b','10011010')),
-			('X',('b','01110010')),
-		],
-		'output': 'O',
-		'ops': [
-			('br',(char(0),B1()),[('set',('v','O'),('v','G'))],[('set',('v','O'),('v','X'))])
-		]
-	}
-	return code
-
 def test_br():
 	G = var('G')
 	O = var('O')
@@ -126,18 +112,27 @@ def GotoIf():
 
 def main():
 	tests = [
-#		(('c',test_br()),b'',b''),
-		(('c',GotoIf()),b'',b''),
+		('printFJ',('c',printFJ()),b'',b'FJ'),
+		('printG',('c',printG()),b'',b'G'),
+		('printFD',('c',printFD()),b'',b'FD'),
+		('test_branch',('c',test_br()),b'a',b'Y'),
+		('test_branch',('c',test_br()),b'd',b'N'),
+		('GotoIf',('c',GotoIf()),b'',b'\x9a\x9a\x9a\x9a\x9a\x00'),
 	]
 	
-	for (ty,d),i,o in tests:
+	for name,(ty,d),i,ox in tests:
 		if ty == 'c':
 			g = code_to_graph(d)
 		else:
 			g = d
 		
 		_ = graph_to_output(g)
-		o = interpreter(g,i)
+		ogarr,ogb = interpreter(g,i)
+		if ox != ogb:
+			print('Test failed: ',name)
+			print('Expected: ',ox)
+			print('Got: ',ogb,ogarr)
+			assert(False)
 	
 
 if __name__ == '__main__':

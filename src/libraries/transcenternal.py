@@ -54,6 +54,7 @@ def code_to_graph(code):
 				print('Unexpected argument: ',g.keys())
 				assert(False)
 			g0, g1 = g[0], g[1]
+			"""
 			if g0 is None or g1 is None:
 				h = genHash()
 				res = {
@@ -61,6 +62,7 @@ def code_to_graph(code):
 					'h': h
 				}
 				return res
+			"""
 			k = "%s#%s" % (g0['h'],g1['h'])
 			if k in table:
 				return table[k]
@@ -71,8 +73,11 @@ def code_to_graph(code):
 			}
 			table[k] = res
 			return res
-		return N
-	N = makeN()
+		
+		def N2(g): # 単にダミー
+			return g
+		return N,N2
+	N,N2 = makeN()
 
 	decl = code['decl']
 
@@ -156,9 +161,9 @@ def code_to_graph(code):
 	N2 = lambda v: v
 	def setOp(to,fr,cont):
 		return N2({
-			0: N2({
+			0: N({
 				0: B0,
-				1: N2({
+				1: N({
 					0: data_to_graph(to),
 					1: data_to_graph(fr),
 				})
@@ -185,7 +190,7 @@ def code_to_graph(code):
 			0: N2({
 				0: JumpDummy, #B0,B1以外ならなんでも
 				1: N2({
-					0: N2({0: data_to_graph(v0), 1: data_to_graph(v1)}),
+					0: N({0: data_to_graph(v0), 1: data_to_graph(v1)}),
 					1: to,
 				})
 			}),
@@ -199,6 +204,7 @@ def code_to_graph(code):
 	def ops_to_graph(ops,res):
 		for op in ops[::-1]:
 			ty = op[0]
+			#print('Conpile',op)
 			if ty == 'set':
 				(_,to,fr) = op
 				res = setOp(to,fr,res)
@@ -252,7 +258,6 @@ def code_to_graph(code):
 			print('Unknown op',op)
 			assert False
 		return res
-	
 
 	cont = B0
 	# cont = setOp('1' + '11111111', decl_gs[code['output']], cont)
