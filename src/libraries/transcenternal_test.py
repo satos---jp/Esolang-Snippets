@@ -51,7 +51,7 @@ def printFD():
 	code = {
 		'decl': [ # name, 初期値
 			('O',('b','')), # 出力
-			('H',('N',B0(),B0())), # outputの先端
+			('H',New(B0(),B0())), # outputの先端
 		],
 		'output': 'O',
 		'ops': [
@@ -122,7 +122,7 @@ def main():
 	
 	for name,(ty,d),i,ox in tests:
 		if not name in ['printFD']:
-			continue
+			# continue
 			pass
 		print('Test',name)
 		if ty == 'c':

@@ -88,7 +88,7 @@ def interpreter(g,input,binDep=100):
 	opcnt = 0
 	while True:
 		opcnt += 1
-		print_graph('00',g[0][0],opcnt)
+		# print_graph('00',g[0][0],opcnt)
 		if opcnt > 100000:
 			print('Too many operations')
 			assert False

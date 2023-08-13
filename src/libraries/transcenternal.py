@@ -141,6 +141,11 @@ def code_to_graph(code):
 				0: data_to_graph_cont(data[1],cont),
 				1: data_to_graph_cont(data[2],cont)
 			})
+		elif ty == 'N2': # new without Hashing
+			return N2({
+				0: data_to_graph_cont(data[1],cont),
+				1: data_to_graph_cont(data[2],cont)
+			})
 		elif ty == 'v': # address of variable
 			return bin2g_cont(decl_gs[data[1]],cont)
 		elif ty == 'ra': # relative address after variable
@@ -193,11 +198,11 @@ def code_to_graph(code):
 	def newOp(to,v0v1,cont):
 		v0,v1 = v0v1
 		return N2({
-			0: N2({
+			0: N({
 				0: B1,
-				1: N2({
+				1: N({
 					0: data_to_graph(to),
-					1: N2({0: data_to_graph(v0), 1: data_to_graph(v1)}),
+					1: N({0: data_to_graph(v0), 1: data_to_graph(v1)}),
 				})
 			}),
 			1: cont
@@ -306,7 +311,7 @@ def B1():
 	return ('c','B1')
 
 def New(v0,v1):
-	return ('N',v0,v1)
+	return ('N2',v0,v1)
 
 def char(n):
 	return ('b','1' + '1'*n + '0')

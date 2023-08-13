@@ -35,7 +35,7 @@ code = {
 		('C',B0()), #inner counter
 		('C0',('b','00000')), # counter for C
 		('O',B0()), #出力
-		('H',('N',B0(),B0())), # outputの先端
+		('H',New(B0(),B0())), # outputの先端
 		('F',B0()), #フラッシュ判定用
 		('T',B0()), #outer counter
 		('S',B0()), #ストレート判定用
