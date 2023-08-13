@@ -44,13 +44,44 @@ def gengenVar(prefix):
 def code_to_graph(code):
 	genVar = gengenVar('V')
 	genLabel = gengenVar('L')
+	
+	# Make a graph with hashing
+	def makeN():
+		genHash = gengenVar('H')
+		table = {}
+		def N(g):
+			if set(g.keys()) != set([0,1]):
+				print('Unexpected argument: ',g.keys())
+				assert(False)
+			g0, g1 = g[0], g[1]
+			if g0 is None or g1 is None:
+				h = genHash()
+				res = {
+					0: g0, 1: g1,
+					'h': h
+				}
+				return res
+			k = "%s#%s" % (g0['h'],g1['h'])
+			if k in table:
+				return table[k]
+			h = genHash()
+			res = {
+				0: g0, 1: g1,
+				'h': h
+			}
+			table[k] = res
+			return res
+		return N
+	N = makeN()
 
 	decl = code['decl']
 
 	finalCode = {
+		'h': 'HRoot',
 		0: {
-			0: {}, #B0
-			1: {}, #B1
+			'h': 'HR00',
+			0: {'h': 'HB0'}, #B0
+			1: {'h': 'HB1'}, #B1
 		}
 	}
 	JumpDummy = finalCode[0]
@@ -64,7 +95,7 @@ def code_to_graph(code):
 		res = cont
 		for c in s[::-1]:
 			c = B0 if c == '0' else B1
-			res = { 0: c, 1: res }
+			res = N({ 0: c, 1: res })
 		return res
 	
 	def bin2g(s):	
@@ -81,10 +112,10 @@ def code_to_graph(code):
 			elif c == 'B1':
 				return bin2g_cont('001',cont)
 		elif ty == 'N': # new 
-			return {
+			return N({
 				0: data_to_graph_cont(data[1],cont),
 				1: data_to_graph_cont(data[2],cont)
-			}
+			})
 		elif ty == 'v': # address of variable
 			return bin2g_cont(decl_gs[data[1]],cont)
 		elif ty == 'ra': # relative address after variable
@@ -121,44 +152,45 @@ def code_to_graph(code):
 	print(decl_gs)
 	
 	############# Operation Compilation #################
-
+	
+	N2 = lambda v: v
 	def setOp(to,fr,cont):
-		return {
-			0: {
+		return N2({
+			0: N2({
 				0: B0,
-				1: {
+				1: N2({
 					0: data_to_graph(to),
 					1: data_to_graph(fr),
-				}
-			},
+				})
+			}),
 			1: cont
-		}
+		})
 
 	def newOp(to,v0v1,cont):
 		v0,v1 = v0v1
-		return {
-			0: {
+		return N2({
+			0: N2({
 				0: B1,
-				1: {
+				1: N2({
 					0: data_to_graph(to),
-					1: {0: data_to_graph(v0), 1: data_to_graph(v1)},
-				}
-			},
+					1: N2({0: data_to_graph(v0), 1: data_to_graph(v1)}),
+				})
+			}),
 			1: cont
-		}
+		})
 	
 	def branchOp(v0v1,to,cont):
 		v0,v1 = v0v1
-		return {
-			0: {
+		return N2({
+			0: N2({
 				0: JumpDummy, #B0,B1以外ならなんでも
-				1: {
-					0: {0: data_to_graph(v0), 1: data_to_graph(v1)},
+				1: N2({
+					0: N2({0: data_to_graph(v0), 1: data_to_graph(v1)}),
 					1: to,
-				}
-			},
+				})
+			}),
 			1: cont
-		}
+		})
 
 	# gotoIfとlabelの解決される順番に依る
 	label_to_graph = {}
@@ -249,7 +281,7 @@ def B0():
 def B1():
 	return ('c','B1')
 
-def N(v0,v1):
+def New(v0,v1):
 	return ('N',v0,v1)
 
 def char(n):
@@ -263,7 +295,7 @@ def var(x):
 
 ############## Graph related codes ####################################
 
-def check_all_node_has_n(g):
+def node_num(g):
 	gone = set()	
 	def aux(g):
 		n = g['n']
@@ -273,6 +305,7 @@ def check_all_node_has_n(g):
 		aux(g[0])
 		aux(g[1])
 	aux(g)
+	return len(gone)
 
 def print_graph(g):
 	gone = set()
@@ -313,6 +346,7 @@ def graph_to_output(g):
 	
 	dfs(g)
 	# check_all_node_has_n(g)
+	print('Num of nodes',node_num(g))
 	# print_graph(g)
 	
 	import string
