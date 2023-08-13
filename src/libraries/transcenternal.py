@@ -228,6 +228,8 @@ def code_to_graph(code):
 	def ops_to_graph(ops,res):
 		for op in ops[::-1]:
 			ty = op[0]
+			if ty == '#':
+				continue
 			print('Conpile',nodeNum(),op)
 			if ty == 'set':
 				(_,to,fr) = op
@@ -281,6 +283,7 @@ def code_to_graph(code):
 				continue
 			print('Unknown op',op)
 			assert False
+		print('Conpiled',nodeNum())
 		return res
 
 	cont = B0

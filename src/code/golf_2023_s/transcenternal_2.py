@@ -7,25 +7,20 @@ H = ('v','H')
 F = ('v','F')
 T = var('T')
 S = var('S')
+NS = var('S')
 M = var('M')
 
 DEBUG=False
 
-def print_char_debug_op(c):
-	if DEBUG:
-		return []
-	else:
-		return []
-
 code = {
 	'decl': [ #name, 初期値
-		('C',B0()), #inner counter
-		('C0',('b','00010')), # counter for C
+		('S',B0()), #ストレート判定用
 		('M',B0()), # 現在の2byteの先頭を覚えておく
 		('F',B0()), #フラッシュ判定用
-		('T',B0()), #outer counter
-		('S',B0()), #ストレート判定用
+		('NS',B0()), #ストレート更新時に使うやつ
+		('C',B0()), #inner counter
 		('H',B0()), #Output保存
+		('C0',('b','00010')), # counter for C
 	],
 	'output': None,
 	'ops': [
@@ -38,6 +33,7 @@ code = {
 		('set',F,B1()),
 		#ストレートの定数初期化
 		('new',S,(B0(),B0())),
+		('new',S,(B0(),S)),
 		('new',S,(B0(),S)),
 		('new',S,(B0(),S)),
 		('new',S,(B0(),S)),
@@ -62,7 +58,7 @@ code = {
 
 		('set',('b','1'),('b','1'*9)), #数字へ
 		# 1,10,11,100,101
-		('br',(char(2),B0()),
+		('#','br',(char(2),B0()),
 			[('br',(char(1),B0()),
 				[('set',rel(S,'0'),B1())],
 				[('br',(char(0),B0()),
@@ -72,26 +68,36 @@ code = {
 				[('set',rel(S,'1110'),B1())],
 				[('set',rel(S,'11110'),B1())],)],
 		),
+		
+		('set',rel(NS,'0'),S),
+		('br',(char(2),B1()),[
+			('set',rel(NS,'0'),rel(NS,'01111')),
+		],[]),
+		('br',(char(1),B1()),[
+			('set',rel(NS,'0'),rel(NS,'011')),
+		],[]),
+		('br',(char(0),B1()),[
+			('set',rel(NS,'0'),rel(NS,'01')),
+		],[]),
+		('set',rel(NS,'00'),B1()),
 
-		*print_char_debug_op('R'),
 		('set',('b','1'),('b','1'*9)), #次の文字へ
 		('set',C,rel(C,'1')),
 		('gotoIfNe',(C,B0()),'inner'),
 		('set',('b','1'),('b','1'*9)), #改行飛ばす
 
 		# S判定
-		('set',T,B1()),
+		('set',S,rel(S,'1')),
+		('set',F,B1()),
 		('label','checkS'),
 		('br',(rel(S,'0'),B1()),[
-			*print_char_debug_op('Y'),
 		],[
-			*print_char_debug_op('N'),
-			('set',T,B0()),
+			('set',F,B0()),
 		]),
 		('set',S,rel(S,'1')),
 		('gotoIfNe',(S,B0()),'checkS'),
 
-		('set',rel(M,'11110'),T), #Sなら1になってるbit目
+		('set',rel(M,'11110'),F), #Sなら1になってるbit目
 		('set',rel(M,'10'),B1()),
 		('set',rel(M,'0'),B1()),
 
