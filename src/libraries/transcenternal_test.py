@@ -121,6 +121,10 @@ def main():
 	]
 	
 	for name,(ty,d),i,ox in tests:
+		if not name in ['printFD']:
+			continue
+			pass
+		print('Test',name)
 		if ty == 'c':
 			g = code_to_graph(d)
 		else:

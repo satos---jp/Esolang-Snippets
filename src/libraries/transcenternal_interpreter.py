@@ -1,4 +1,41 @@
 import sys
+import graphviz
+
+def print_graph(baseaddr,g,label):
+	dot = graphviz.Digraph('_')
+	gone = {}
+	
+	bfs = [(g,baseaddr)]
+	gone[g['n']] =  "%s#%s" % (baseaddr,g['n'])
+	
+	while len(bfs) > 0:
+		g,addr = bfs[0]
+		bfs = bfs[1:]
+		
+
+		n = g['n']
+		assert(n in gone)
+		k = gone[n]
+		dot.node(k,addr)
+		
+		for i in [0,1]:
+			to = g[i]
+			tn = to['n']
+			constraint = 'false'
+			taddr = addr + str(i)
+			if not tn in gone:
+				tk = "%s#%s" % (taddr,tn)
+				gone[tn] = tk
+				bfs.append((to,taddr))
+				constraint = 'true'
+			
+			tk = gone[tn]
+			dot.edge(k,tk,label=str(i),constraint=constraint)
+
+	# dot.render(view=True)
+	dot.render(outfile='od/o%s.svg' % str(label))
+	#exit(-1)
+	pass
 
 def interpreter(g,input,binDep=100):
 	def gengenVar(prefix):
@@ -51,6 +88,7 @@ def interpreter(g,input,binDep=100):
 	opcnt = 0
 	while True:
 		opcnt += 1
+		print_graph('00',g[0][0],opcnt)
 		if opcnt > 100000:
 			print('Too many operations')
 			assert False

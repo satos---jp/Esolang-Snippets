@@ -47,9 +47,21 @@ def code_to_graph(code):
 	
 	# Make a graph with hashing
 	def makeN():
+		nodeCnt = 0
 		genHash = gengenVar('H')
 		table = {}
+
+		hashCanon = {}
+		def canon(h): # return canonical hash of h
+			def aux(nh):
+				if not nh in hashCanon:
+					return nh
+				ts = hashCanon[nh]
+				return "[%s]" % ";".join(map(aux,ts))
+			return aux(h)
+		
 		def N(g):
+			nonlocal nodeCnt
 			if set(g.keys()) != set([0,1]):
 				print('Unexpected argument: ',g.keys())
 				assert(False)
@@ -65,19 +77,27 @@ def code_to_graph(code):
 			"""
 			k = "%s#%s" % (g0['h'],g1['h'])
 			if k in table:
-				return table[k]
+				res = table[k]
+				# print('found hash: ',canon(res['h']))
+				return res
 			h = genHash()
+			hashCanon[h] = (g0['h'],g1['h'])
 			res = {
 				0: g0, 1: g1,
 				'h': h
 			}
+			nodeCnt += 1
 			table[k] = res
 			return res
 		
 		def N2(g): # 単にダミー
+			nonlocal nodeCnt
+			nodeCnt += 1
 			return g
-		return N,N2
-	N,N2 = makeN()
+		def nodeNum():
+			return nodeCnt
+		return N,N2,nodeNum
+	N,N2,nodeNum = makeN()
 
 	decl = code['decl']
 
@@ -157,8 +177,7 @@ def code_to_graph(code):
 	print(decl_gs)
 	
 	############# Operation Compilation #################
-	
-	N2 = lambda v: v
+
 	def setOp(to,fr,cont):
 		return N2({
 			0: N({
@@ -204,7 +223,7 @@ def code_to_graph(code):
 	def ops_to_graph(ops,res):
 		for op in ops[::-1]:
 			ty = op[0]
-			#print('Conpile',op)
+			print('Conpile',nodeNum(),op)
 			if ty == 'set':
 				(_,to,fr) = op
 				res = setOp(to,fr,res)
