@@ -285,7 +285,8 @@ def code_to_graph(code):
 
 	cont = B0
 	# cont = setOp('1' + '11111111', decl_gs[code['output']], cont)
-	cont = setOp(('b','1'), ('b',decl_gs[code['output']]), cont)
+	if code['output'] is not None:
+		cont = setOp(('b','1'), ('b',decl_gs[code['output']]), cont)
 	
 	codeGraph = ops_to_graph(operations,cont)
 	# codeGraph[0][1] [0][0] [1][1][0] = B1  
